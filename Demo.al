@@ -4,6 +4,7 @@ page 50102 Test
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = 27;
+    Caption = 'user1';
 
     layout
     {
