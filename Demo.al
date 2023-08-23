@@ -1,9 +1,11 @@
+
 page 50104 Test
 {
     PageType = Card;
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = 27;
+    Caption = 'user1';
 
     layout
     {
