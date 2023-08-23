@@ -3,7 +3,7 @@ page 50102 Test
     PageType = Card;
     ApplicationArea = All;
     UsageCategory = Administration;
-    SourceTable = 18;
+    SourceTable = 27;
 
     layout
     {
