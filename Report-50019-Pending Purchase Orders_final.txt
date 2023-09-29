@@ -2,8 +2,8 @@ OBJECT Report 50019 Pending Purchase Orders
 {
   OBJECT-PROPERTIES
   {
-    Date=18-09-23;
-    Time=03:29:28 PM;
+    Date=29-09-23;
+    Time=10:31:42 AM;
     Modified=Yes;
     Version List=AST;
   }
@@ -38,6 +38,10 @@ OBJECT Report 50019 Pending Purchase Orders
                                   CLEAR(ReceiveQty);
                                   CLEAR(OSQty);
                                   CLEAR(OutValue);
+                                  //->28-09-2023  TEAM-ASHISH-17141
+                                  IF "Purchase Header".ForeClosed=TRUE THEN
+                                    CurrReport.SKIP();
+                                  //<-28-09-2023  TEAM-ASHISH-17141
                                   CurrReport.CREATETOTALS(OrderQty,ReceiveQty,OSQty,OutValue);
                                   recPurLine.RESET;
                                   recPurLine.SETRANGE("Document Type",recPurLine."Document Type"::Order);
@@ -45,12 +49,16 @@ OBJECT Report 50019 Pending Purchase Orders
                                   //->18-09-2023  TEAM-ASHISH-17141
                                   recPurLine.SETFILTER("Location Code",LocationCode);
                                   recPurLine.SETFILTER("Shortcut Dimension 2 Code",DivisionCode);
+                                  //->29-09-2023  TEAM-ASHISH-17141
+                                  IF recPurLine."MR Foreclose"=TRUE THEN
+                                    CurrReport.SKIP();
+                                  //<-29-09-2023  TEAM-ASHISH-17141
                                   //<-18-09-2023  TEAM-ASHISH-17141
                                   IF recPurLine.FINDSET THEN
                                     REPEAT
                                       OrderQty :=OrderQty+recPurLine.Quantity;
                                       ReceiveQty :=ReceiveQty+recPurLine."Quantity Received";
-                                      OutValue :=OutValue+((OrderQty-ReceiveQty)*recPurLine."Direct Unit Cost");
+                                      OutValue :=OutValue+((recPurLine.Quantity-recPurLine."Quantity Received")*recPurLine."Direct Unit Cost");
                                     UNTIL recPurLine.NEXT=0;
                                     OSQty :=OrderQty-ReceiveQty;
 
@@ -302,6 +310,9 @@ OBJECT Report 50019 Pending Purchase Orders
         </Field>
         <Field Name="CurrencyCode">
           <DataField>CurrencyCode</DataField>
+        </Field>
+        <Field Name="LocationCode">
+          <DataField>LocationCode</DataField>
         </Field>
       </Fields>
       <rd:DataSetInfo>
@@ -1338,7 +1349,7 @@ OBJECT Report 50019 Pending Purchase Orders
         <Height>0.90625in</Height>
         <Style />
       </Body>
-      <Width>9.94792in</Width>
+      <Width>10.94792in</Width>
       <Page>
         <PageHeader>
           <Height>1.0925in</Height>
