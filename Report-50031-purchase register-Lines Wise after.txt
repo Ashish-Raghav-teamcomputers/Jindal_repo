@@ -1,0 +1,503 @@
+OBJECT Report 50031 Purchase Register - Lines wise
+{
+  OBJECT-PROPERTIES
+  {
+    Date=26-10-23;
+    Time=05:40:21 PM;
+    Modified=Yes;
+    Version List=AST;
+  }
+  PROPERTIES
+  {
+    ProcessingOnly=Yes;
+    OnPreReport=BEGIN
+                  MakeExcelInfo;
+                END;
+
+    OnPostReport=BEGIN
+                   CreateExcelbook;
+                 END;
+
+  }
+  DATASET
+  {
+    { 1000000000;;DataItem;                  ;
+               DataItemTable=Table122;
+               DataItemTableView=SORTING(Posting Date,No.)
+                                 ORDER(Ascending);
+               OnPreDataItem=BEGIN
+                               CLEAR(TotalInvAMT);
+                               CLEAR(TotalTDSAMT);
+                               CLEAR(TotalGSTAMT);
+                             END;
+
+               OnAfterGetRecord=BEGIN
+                                  IF NOT recVend.GET("Buy-from Vendor No.") THEN recVend.INIT;
+                                  IF NOT recLoc.GET("Location Code") THEN recLoc.INIT;
+
+                                  CALCFIELDS("Amount to Vendor");
+
+
+                                  CLEAR(TDSAMT);
+                                  CLEAR(TDSper);
+                                  CLEAR(TDSSection);
+                                  TDSEntry.RESET;
+                                  TDSEntry.SETCURRENTKEY("Document No.","Posting Date");
+                                  TDSEntry.SETRANGE("Document No.","No.");
+                                  TDSEntry.SETRANGE("Posting Date","Posting Date");
+                                  IF TDSEntry.FINDFIRST THEN
+                                  BEGIN
+                                  //->Team-17141-26/10/23
+                                    IF "Purch. Inv. Header"."Currency Factor"<>0 THEN
+                                    TDSAMT := TDSEntry."TDS Amount"/"Purch. Inv. Header"."Currency Factor"
+                                    ELSE
+                                    //<-Team-17141-26/10/23
+                                    TDSAMT := TDSEntry."TDS Amount";
+                                    TDSper := TDSEntry."TDS %";
+                                    TDSSection := FORMAT(TDSEntry."TDS Section");
+                                  END;
+
+
+
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Inv. Header"."Currency Factor"<>0 THEN
+                                    TotalInvAMT += "Amount to Vendor"/"Purch. Inv. Header"."Currency Factor"
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                  TotalInvAMT += "Amount to Vendor";
+                                END;
+
+               OnPostDataItem=BEGIN
+                                ExcelBuf.NewRow;
+                                ExcelBuf.AddColumn('Purchase Invoice - Total',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+
+                                ExcelBuf.AddColumn(TotalInvAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn(TotalTDSAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn(TotalGSTAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                              END;
+
+               ReqFilterFields=Posting Date,Location Code }
+
+    { 1000000002;1;DataItem;                 ;
+               DataItemTable=Table123;
+               DataItemTableView=SORTING(Document No.,Line No.)
+                                 ORDER(Ascending)
+                                 WHERE(Type=FILTER(<>' '));
+               OnAfterGetRecord=BEGIN
+                                  CLEAR(Desc);
+                                  CASE Type OF
+                                    Type::"G/L Account":
+                                      BEGIN
+                                          GLAcc.GET("No.");//15
+                                          Desc :=GLAcc.Name;
+                                      END;
+                                    Type::Item:
+                                      BEGIN
+                                          recItem.GET("No.");//27
+                                          Desc :=recItem.Description;
+                                      END;
+                                    Type::"Fixed Asset":
+                                      BEGIN
+                                          FA.GET("No.");//5600
+                                          Desc :=FA.Description;
+                                      END;
+                                    Type::"Charge (Item)":
+                                      BEGIN
+                                          ItemCharge.GET("No.");//5800
+                                          Desc :=ItemCharge.Description;
+                                      END;
+                                  END;
+
+                                  CLEAR(GSTAmount);
+                                  CLEAR(GSTper);
+                                  CLEAR(Flag_RC);
+                                  DetailedGSTLedgerEntry.RESET;
+                                  DetailedGSTLedgerEntry.SETCURRENTKEY("Document No.","Document Line No.","GST Component Code");
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Document No.","Document No.");
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Posting Date","Posting Date");
+                                  DetailedGSTLedgerEntry.SETFILTER(DetailedGSTLedgerEntry."GST Amount",'>%1',0);
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Document Line No.","Purch. Inv. Line"."Line No.");
+                                  IF DetailedGSTLedgerEntry.FINDSET THEN
+                                  BEGIN
+                                  REPEAT
+                                  IF DetailedGSTLedgerEntry."Reverse Charge" THEN
+                                    Flag_RC := TRUE;
+
+                                    //GSTAmount += DetailedGSTLedgerEntry."GST Amount";
+                                    //GSTper := DetailedGSTLedgerEntry."GST %";
+                                  UNTIL DetailedGSTLedgerEntry.NEXT=0;
+                                  END;
+
+                                  ExcelBuf.NewRow;
+                                  ExcelBuf.AddColumn('Purchase Invoice',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn("Document No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Posting Date",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+
+                                  ExcelBuf.AddColumn(Type,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(Desc,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn("Buy-from Vendor No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(recVend.Name,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Purch. Inv. Header"."Document Date",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Inv. Header"."Currency Factor" <> 0 THEN
+                                    ExcelBuf.AddColumn("Amount To Vendor"/"Purch. Inv. Header"."Currency Factor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number)
+                                  ELSE
+                                  //<-Team-17141-26/10/
+                                    ExcelBuf.AddColumn("Amount To Vendor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                  ExcelBuf.AddColumn("Purch. Inv. Header"."Vendor Invoice No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(TDSSection,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(TDSper,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Inv. Header"."Currency Factor" <> 0 THEN
+                                  ExcelBuf.AddColumn("Total TDS Including SHE CESS"/"Purch. Inv. Header"."Currency Factor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number)
+                                  ELSE
+                                  //<-Team-17141-26/10/
+                                    ExcelBuf.AddColumn("Total TDS Including SHE CESS",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                  ExcelBuf.AddColumn(recVend."GST Registration No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(ROUND("GST %",1),FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Inv. Header"."Currency Factor" <> 0 THEN
+                                  ExcelBuf.AddColumn("Total GST Amount"/"Purch. Inv. Header"."Currency Factor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number)
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                    ExcelBuf.AddColumn("Total GST Amount",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                  ExcelBuf.AddColumn("Shortcut Dimension 1 Code",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Shortcut Dimension 2 Code",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn(recLoc."GST Registration No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn(Flag_RC,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Inv. Header"."Currency Factor"<>0 THEN
+                                    BEGIN
+                                  TotalGSTAMT += "Total GST Amount"/"Purch. Inv. Header"."Currency Factor";
+                                  TotalTDSAMT += "Total TDS Including SHE CESS"/"Purch. Inv. Header"."Currency Factor";
+                                  END
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                  BEGIN
+                                  TotalGSTAMT += "Total GST Amount";
+                                  TotalTDSAMT += "Total TDS Including SHE CESS";
+                                  END
+                                END;
+
+               DataItemLink=Document No.=FIELD(No.) }
+
+    { 1000000001;0;DataItem;                 ;
+               DataItemTable=Table124;
+               DataItemTableView=SORTING(Posting Date,No.)
+                                 ORDER(Ascending);
+               OnPreDataItem=BEGIN
+                               SETFILTER("Posting Date","Purch. Inv. Header".GETFILTER("Purch. Inv. Header"."Posting Date"));
+                               SETFILTER("Location Code","Purch. Inv. Header".GETFILTER("Purch. Inv. Header"."Location Code"));
+
+
+                               CLEAR(TotalInvAMT);
+                               CLEAR(TotalTDSAMT);
+                               CLEAR(TotalGSTAMT);
+                             END;
+
+               OnAfterGetRecord=BEGIN
+                                  IF NOT recVend.GET("Buy-from Vendor No.") THEN recVend.INIT;
+                                  IF NOT recLoc.GET("Location Code") THEN recLoc.INIT;
+
+                                  CALCFIELDS("Amount to Vendor");
+
+
+                                  CLEAR(TDSAMT);
+                                  CLEAR(TDSper);
+                                  CLEAR(TDSSection);
+                                  TDSEntry.RESET;
+                                  TDSEntry.SETCURRENTKEY("Document No.","Posting Date");
+                                  TDSEntry.SETRANGE("Document No.","No.");
+                                  TDSEntry.SETRANGE("Posting Date","Posting Date");
+                                  IF TDSEntry.FINDFIRST THEN
+                                  BEGIN
+                                    //->Team-17141-26/10/23
+                                    IF "Purch. Cr. Memo Hdr."."Currency Factor"<>0 THEN
+                                    TDSAMT := TDSEntry."TDS Amount"/"Purch. Cr. Memo Hdr."."Currency Factor"
+                                    ELSE
+                                    //<-Team-17141-26/10/23
+                                    TDSAMT := TDSEntry."TDS Amount";
+                                    TDSper := TDSEntry."TDS %";
+                                    TDSSection := FORMAT(TDSEntry."TDS Section");
+                                  END;
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Cr. Memo Hdr."."Currency Factor"<>0 THEN
+                                  TotalInvAMT += "Amount to Vendor"/"Purch. Cr. Memo Hdr."."Currency Factor"
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                  TotalInvAMT += "Amount to Vendor";
+                                END;
+
+               OnPostDataItem=BEGIN
+                                ExcelBuf.NewRow;
+                                ExcelBuf.AddColumn('Credit Memo - Total',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+
+                                ExcelBuf.AddColumn(TotalInvAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn(TotalTDSAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn(TotalGSTAMT,FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                              END;
+                               }
+
+    { 1000000003;1;DataItem;                 ;
+               DataItemTable=Table125;
+               DataItemTableView=SORTING(Document No.,Line No.)
+                                 ORDER(Ascending)
+                                 WHERE(Type=FILTER(<>' '));
+               OnAfterGetRecord=BEGIN
+                                  CLEAR(Desc);
+                                  CASE Type OF
+                                    Type::"G/L Account":
+                                      BEGIN
+                                          GLAcc.GET("No.");//15
+                                          Desc :=GLAcc.Name;
+                                      END;
+                                    Type::Item:
+                                      BEGIN
+                                          recItem.GET("No.");//27
+                                          Desc :=recItem.Description;
+                                      END;
+                                    Type::"Fixed Asset":
+                                      BEGIN
+                                          FA.GET("No.");//5600
+                                          Desc :=FA.Description;
+                                      END;
+                                    Type::"Charge (Item)":
+                                      BEGIN
+                                          ItemCharge.GET("No.");//5800
+                                          Desc :=ItemCharge.Description;
+                                      END;
+                                  END;
+
+
+                                  CLEAR(GSTAmount);
+                                  CLEAR(GSTper);
+                                  CLEAR(Flag_RC);
+                                  DetailedGSTLedgerEntry.RESET;
+                                  DetailedGSTLedgerEntry.SETCURRENTKEY("Document No.","Document Line No.","GST Component Code");
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Document No.","Document No.");
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Posting Date","Posting Date");
+                                  DetailedGSTLedgerEntry.SETRANGE(DetailedGSTLedgerEntry."Document Line No.","Line No.");
+                                  IF DetailedGSTLedgerEntry.FINDSET THEN
+                                  BEGIN
+                                  REPEAT
+                                  IF DetailedGSTLedgerEntry."Reverse Charge" THEN
+                                    Flag_RC := TRUE;
+
+                                    //GSTAmount += DetailedGSTLedgerEntry."GST Amount";
+                                    //GSTper := DetailedGSTLedgerEntry."GST %";
+                                  UNTIL DetailedGSTLedgerEntry.NEXT=0;
+                                  END;
+
+
+                                  ExcelBuf.NewRow;
+                                  ExcelBuf.AddColumn('Credit Memo',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn("Document No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Posting Date",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+
+                                  ExcelBuf.AddColumn(Type,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(Desc,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn("Buy-from Vendor No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(recVend.Name,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Purch. Cr. Memo Hdr."."Document Date",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Cr. Memo Hdr."."Currency Factor"<>0 THEN
+                                    ExcelBuf.AddColumn("Amount To Vendor"/"Purch. Cr. Memo Hdr."."Currency Factor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number)
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                    ExcelBuf.AddColumn("Amount To Vendor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                  ExcelBuf.AddColumn("Purch. Cr. Memo Hdr."."Vendor Cr. Memo No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(TDSSection,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(TDSper,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn('',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                  ExcelBuf.AddColumn(recVend."GST Registration No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn(ROUND("GST %",1),FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Cr. Memo Hdr."."Currency Factor"<>0 THEN
+                                    ExcelBuf.AddColumn("Total GST Amount"/"Purch. Cr. Memo Hdr."."Currency Factor",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number)
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                    ExcelBuf.AddColumn("Total GST Amount",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+                                  ExcelBuf.AddColumn("Shortcut Dimension 1 Code",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+                                  ExcelBuf.AddColumn("Shortcut Dimension 2 Code",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn(recLoc."GST Registration No.",FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+
+                                  ExcelBuf.AddColumn(Flag_RC,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+
+                                  //->Team-17141-26/10/23
+                                  IF "Purch. Cr. Memo Hdr."."Currency Factor"<>0 THEN
+                                  TotalGSTAMT += "Total GST Amount"/"Purch. Cr. Memo Hdr."."Currency Factor"
+                                  ELSE
+                                  //<-Team-17141-26/10/23
+                                  TotalGSTAMT += "Total GST Amount";
+                                END;
+
+               DataItemLink=Document No.=FIELD(No.) }
+
+  }
+  REQUESTPAGE
+  {
+    PROPERTIES
+    {
+    }
+    CONTROLS
+    {
+    }
+  }
+  LABELS
+  {
+  }
+  CODE
+  {
+    VAR
+      ExcelBuf@1000000000 : TEMPORARY Record 370;
+      recVend@1000000002 : Record 23;
+      recLoc@1000000001 : Record 14;
+      DetailedGSTLedgerEntry@1000000003 : Record 16419;
+      GSTAmount@1000000004 : Decimal;
+      GSTper@1000000005 : Decimal;
+      TDSEntry@1000000006 : Record 13729;
+      TDSSection@1000000007 : Text;
+      TDSper@1000000008 : Decimal;
+      TDSAMT@1000000009 : Decimal;
+      TotalInvAMT@1000000010 : Decimal;
+      TotalTDSAMT@1000000011 : Decimal;
+      TotalGSTAMT@1000000012 : Decimal;
+      Flag_RC@1000000013 : Boolean;
+      Desc@1000000014 : Text;
+      GLAcc@1000000015 : Record 15;
+      recItem@1000000016 : Record 27;
+      FA@1000000017 : Record 5600;
+      ItemCharge@1000000018 : Record 5800;
+
+    PROCEDURE MakeExcelInfo@3();
+    BEGIN
+      ExcelBuf.SetUseInfoSheet;
+      ExcelBuf.AddInfoColumn('Company Name',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn(COMPANYNAME,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.NewRow;
+      ExcelBuf.AddInfoColumn('Report Name',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn('Purchase Register',FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.NewRow;
+      ExcelBuf.AddInfoColumn('Report No.',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn(50020,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Number);
+      ExcelBuf.NewRow;
+      ExcelBuf.AddInfoColumn('User ID',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn(USERID,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.NewRow;
+      ExcelBuf.AddInfoColumn('Date',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn(TODAY,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Date);
+      ExcelBuf.NewRow;
+      ExcelBuf.AddInfoColumn('Purchase Invoice Header Filters',FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddInfoColumn("Purch. Inv. Header".GETFILTERS,FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.NewRow;
+      //ExcelBuf.AddInfoColumn(FORMAT(Text011),FALSE,'',TRUE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      //ExcelBuf.AddInfoColumn("G/L Account".GETFILTER("Date Filter"),FALSE,'',FALSE,FALSE,FALSE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.ClearNewRow;
+      MakeExcelDataHeader;
+    END;
+
+    LOCAL PROCEDURE MakeExcelDataHeader@2();
+    BEGIN
+      ExcelBuf.AddColumn('Document Type',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Posting Document No.',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Posting Date',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Type',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('No',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Description',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Vendor Code',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Vendor Name',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Invoice Date',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Invoice Value',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Invoice No.',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('TDS Section',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('TDS Rate %',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('TDS Amount',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Vendor GSTIN No.',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('GST Rate %',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('GST Amount',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Accounting Location',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+      ExcelBuf.AddColumn('Division Code',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Customer GSTIN No.',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+
+      ExcelBuf.AddColumn('Reverse Charge',FALSE,'',TRUE,FALSE,TRUE,'',ExcelBuf."Cell Type"::Text);
+    END;
+
+    PROCEDURE CreateExcelbook@1();
+    BEGIN
+      ExcelBuf.CreateBookAndOpenExcel('','Purchase Register','',COMPANYNAME,USERID);
+      ERROR('');
+    END;
+
+    BEGIN
+    END.
+  }
+  RDLDATA
+  {
+  }
+}
+
