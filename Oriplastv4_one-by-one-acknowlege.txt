@@ -1,0 +1,631 @@
+OBJECT Codeunit 50097 SalesForce Integration
+{
+  OBJECT-PROPERTIES
+  {
+    Date=01-08-24;
+    Time=12:21:56 PM;
+    Modified=Yes;
+    Version List=;
+  }
+  PROPERTIES
+  {
+    OnRun=BEGIN
+            // GetAccessToken('');
+               GetSalesOrder;
+            // CreateSalesOrder;
+            //  ConfirmSalesOrder(GetAccessToken(''));
+          END;
+
+  }
+  CODE
+  {
+    VAR
+      CRMVendorStagingTable@1000000026 : Record 50028;
+      url@1000000025 : Text;
+      TypeHelper@1000000024 : Codeunit 10;
+      FileMgt@1000000023 : Codeunit 419;
+      FileVar@1000000022 : File;
+      BigTxtVar@1000000021 : BigText;
+      Base64BigTxt@1000000020 : BigText;
+      ExportDetails@1000000018 : Text;
+      FileName@1000000017 : Text;
+      HttpWebRequestMgt@1000000016 : Codeunit 1297;
+      Req@1000000015 : BigText;
+      TempBlob@1000000014 : TEMPORARY Record 99008535;
+      PostUrl@1000000013 : Text;
+      ServicePointManager@1000000012 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.ServicePointManager";
+      SecurityProtocolType@1000000011 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.SecurityProtocolType";
+      Instr@1000000010 : InStream;
+      Outstr@1000000009 : OutStream;
+      TempBlob1@1000000008 : TEMPORARY Record 99008535;
+      ApiResult@1000000007 : Text;
+      HttpStatusCode@1000000006 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.HttpStatusCode";
+      ResponseHeaders@1000000005 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NameValueCollection";
+      JObject@1000000004 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JObject";
+      MessageID@1000000003 : Text;
+      ConvertString@1000000002 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Convert";
+      JsonArrVar@1000000001 : Integer;
+      T349@1000000000 : Record 349;
+      IntreamVar@1000000027 : InStream;
+      TxtVar@1000000028 : Text;
+      TxtVar1@1000000029 : Text;
+      ServicePointManagerVar@1000000031 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.ServicePointManager";
+      SecurityProtocolVar@1000000030 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.SecurityProtocolType";
+      TempBlobVar@1000000032 : TEMPORARY Record 99008535;
+      OutstreamVar@1000000033 : OutStream;
+      AuthorizationString@1000000034 : Text;
+      JSONStr@1000000035 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.String";
+      Convert@1000000036 : DotNet "'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Convert";
+      IOFile@1000000037 : DotNet "'mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.IO.File";
+      VMSAPILogTable@1000000019 : Record 50023;
+      SecurityProtocol@1000000038 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.ServicePointManager";
+      JsonAsText@1000000039 : Text;
+      StringBuilder1@1000000042 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Text.StringBuilder";
+      StringWriter1@1000000041 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.IO.StringWriter";
+      JSONTextWriter1@1000000040 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.JsonTextWriter";
+      tempblob2@1000000043 : Record 99008535;
+      AccessToken@1000000044 : Text;
+      PurInvHeader@1000000045 : Record 122;
+      Json@1000000046 : Text;
+      I@1000000047 : Integer;
+      Count@1000000048 : Integer;
+      Json1@1000000049 : Text;
+      Json2@1000000050 : Text;
+      charPos@1000000051 : Integer;
+      JsonArray@1000000052 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JArray";
+      JsonValue@1000000053 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JToken";
+      AuthHeaderValue@1000000054 : Text;
+      Base64Convert@1000000055 : DotNet "'mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Convert";
+      JsonArray1@1000000056 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JArray";
+      J@1000000057 : Integer;
+      JsonValue1@1000000058 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JToken";
+      JObject1@1000000059 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JObject";
+      EntryNo@1000000060 : Integer;
+      salesOrderStagging@1000000061 : Record 50101;
+      salesHeader@1000000062 : Record 36;
+      SalesLines@1000000063 : Record 37;
+      salesForceID@1000000064 : Text[50];
+      SalesOrderStagging2@1000000065 : Record 50101;
+      SalesLineNo@1000000066 : Integer;
+      GlbTextVar@1000000067 : Text;
+      SalesLine1@1000000068 : Record 37;
+      DeleteLines@1000000069 : Boolean;
+      SalesOrderStagging3@1000000070 : Record 50101;
+      SalesOrderStagging4@1000000071 : Record 50101;
+      CountSalesHeader@1000000072 : Integer;
+      Countacksalesheader@1000000073 : Integer;
+      PatchAPILog@1000000074 : Record 50110;
+      SalesOrderStagging5@1000000075 : Record 50101;
+      salesOrderStagging6@1000000076 : Record 50101;
+      ErrorMessage2@1000000077 : Text;
+      Acknowledge2@1000000078 : Boolean;
+      SalesOrderStagging7@1000000079 : Record 50101;
+
+    PROCEDURE GetAccessToken@1000000004(ReqBody@1000000012 : Text) : Text;
+    VAR
+      Json@1000000000 : Text;
+      TokenResp@1000000001 : Text;
+      TokenUrl@1000000002 : Text;
+      TokenRequestbody@1000000003 : Text;
+      HttpWebRequestMg@1000000004 : Codeunit 1297;
+      TempBlob@1000000005 : Record 99008535;
+      InStr@1000000006 : InStream;
+      HTTPStatusCode@1000000011 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Net.HttpStatusCode";
+      ResponseHeader@1000000010 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NameObjectCollectionBase";
+      JObject@1000000009 : DotNet "'Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed'.Newtonsoft.Json.Linq.JObject";
+      CheckTokenAccess@1000000008 : Boolean;
+      ErrorText@1000000007 : Text;
+    BEGIN
+      CLEAR(HttpWebRequestMg);
+      HttpWebRequestMg.Initialize('https://oriplastltd--uat.sandbox.my.salesforce.com/services/oauth2/token?grant_type=client_credentials&client_id=3MVG9.AS5PzgHfpZRsMN0wH.ARS_BzVgQdjOZo4Sd0TyyZZUmNz6gNaeTgnE5pztXH05OFadG_xdKUfF4sLW8&client_secret=5939401FC826912EF174484364B9C78F0DC926A6D4D97E15BA37DBCB2137206D');
+      HttpWebRequestMg.DisableUI();
+      HttpWebRequestMg.SetMethod('GET');
+      HttpWebRequestMg.SetContentType('application/x-www-form-urlencoded');
+      HttpWebRequestMg.SetReturnType('application/json');
+      ServicePointManager.SecurityProtocol := SecurityProtocolType.Tls12;
+      TempBlob.INIT;
+      TempBlob.Blob.CREATEINSTREAM(InStr);
+      IF HttpWebRequestMg.GetResponse(InStr,HTTPStatusCode,ResponseHeader) THEN BEGIN
+        Json := TempBlob.ReadAsText('',TEXTENCODING::UTF8);
+        JObject:=JObject.Parse(Json);
+        TokenResp := JObject.GetValue('access_token').ToString();
+        CheckTokenAccess := TRUE;
+        EXIT(TokenResp);
+      END ELSE IF GUIALLOWED THEN BEGIN
+        ErrorText := '';
+        ErrorText := GETLASTERRORTEXT;
+        CheckTokenAccess := FALSE;
+      END;
+    END;
+
+    PROCEDURE GetSalesOrder@1000000008();
+    BEGIN
+      SecurityProtocol := SecurityProtocol.SecurityProtocol(SecurityProtocol.SecurityProtocol.Tls12);
+
+      url := 'https://oriplastltd--uat.sandbox.my.salesforce.com/services/data/v61.0/query/?q=SELECT+Id,Account__r.Account_External_Key__c,Account__r.Name,Final_Order_Value__c,Order_Status__c,'+
+      'Total_Cash_Discount__c,Total_CGST__c,Total_Order_Quantity__c,Total_Price_After_Discount__c,Total_SGST__c,Total_Trade_Discount__c,(SELECT+Id,Cash_Discount_CD__c,CGST_Percentage__c,CGST__c,'+
+      'Final_Price__c,IGST__c,OriPlast_Product_Unit_Price__c,Ori_Plast_Product__r.Description__c'+
+      ',Ori_Plast_Product__r.Name,Ori_Plast_Product__r.OriPlast_Product_Unique_Key__c,Price_After_Discount__c,Quantity__c,SGST_Percentage__c,SGST__c,Total_Discount__c,Total_Price__c,Trade_Discount_TD__c,'+
+      'Trade_Discount__c+FROM+Order_Line_Items__r)+FROM+Ori_Plast_Order__c+Where+Order_Status__c+=+%27Submitted%27+AND+is_Sales_Order_Received__c+=+ False';
+
+      CLEAR(HttpWebRequestMgt);
+       AccessToken:=GetAccessToken('');
+      // MESSAGE(AccessToken);
+      // AccessToken:='00DHz0000003eEf!AQcAQHqVdP8sr00BwuXzDmHJeZz8AYqLIOR_CinUAemQOxvnR0BDBKGoE1_BE_NAFhp4Ao4qt8Q35pBnT.4Anj84KHM59Rbw';
+      HttpWebRequestMgt.Initialize(url);
+      HttpWebRequestMgt.DisableUI;
+      HttpWebRequestMgt.SetMethod('GET');
+
+      HttpWebRequestMgt.AddHeader('Authorization','Bearer '+AccessToken);
+      HttpWebRequestMgt.AddHeader('Content-Type','application/json');
+      HttpWebRequestMgt.SetReturnType('application/json');
+
+      TempBlob.INIT;
+      TempBlob.Blob.CREATEINSTREAM(Instr);
+      CLEAR(ResponseHeaders);
+      CLEAR(Json);
+      IF HttpWebRequestMgt.GetResponse(Instr,HttpStatusCode,ResponseHeaders) THEN
+        BEGIN
+           IF HttpStatusCode.ToString = HttpStatusCode.OK.ToString THEN
+             BEGIN
+              ApiResult := TempBlob.ReadAsText('',TEXTENCODING::UTF8);
+              JObject :=  JObject.JObject;
+              JObject := JObject.Parse(ApiResult);
+              Json  :=  JObject.GetValue('records').ToString;
+              IF Json<>'' THEN
+                BEGIN
+                  //---filtering Json_array
+                  JsonArray := JsonArray.Parse(Json);
+      //            FOR I := 0 TO 1 DO
+                  FOR I := 0 TO JsonArray.Count() - 1 DO
+                    BEGIN
+                      CLEAR(Json1);
+                      JsonValue := JsonArray.Item(I);
+                      JObject := JsonValue;
+                      salesOrderStagging6.RESET;
+                      salesOrderStagging6.SETRANGE("SalesForce ID-Header",JObject.GetValue('Id').ToString());
+                      IF NOT salesOrderStagging6.FINDFIRST THEN BEGIN
+                      //getting/inserting Header-----
+                      //Id, Final_Order_Value__c, Order_Status__c, Total_Cash_Discount__c, Total_CGST__c, Total_Order_Quantity__c, Total_Price_After_Discount__c, Total_SGST__c, Total_Trade_Discount__c, Order_Line_Items__r
+                      salesOrderStagging.INIT;
+                      salesOrderStagging.Type:= salesOrderStagging.Type::"Sales Header";
+                      salesOrderStagging.VALIDATE(salesOrderStagging."SalesForce ID-Header", JObject.GetValue('Id').ToString());
+                      salesForceID:=JObject.GetValue('Id').ToString();
+                      IF JObject.GetValue('Final_Order_Value__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Final_Order_Value__c, JObject.GetValue('Final_Order_Value__c').ToString());
+                      IF JObject.GetValue('Order_Status__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Order_Status__c, JObject.GetValue('Order_Status__c').ToString());
+                      IF JObject.GetValue('Total_Cash_Discount__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_Cash_Discount__c, JObject.GetValue('Total_Cash_Discount__c').ToString());
+                      IF JObject.GetValue('Total_CGST__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_CGST__c, JObject.GetValue('Total_CGST__c').ToString());
+                      IF JObject.GetValue('Total_Order_Quantity__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_Order_Quantity__c, JObject.GetValue('Total_Order_Quantity__c').ToString());
+                      IF JObject.GetValue('Total_Price_After_Discount__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_Price_After_Discount__c, JObject.GetValue('Total_Price_After_Discount__c').ToString());
+                      IF JObject.GetValue('Total_SGST__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_SGST__c, JObject.GetValue('Total_SGST__c').ToString());
+                      IF JObject.GetValue('Total_Trade_Discount__c').ToString()<>''THEN
+                      EVALUATE(salesOrderStagging.Total_Trade_Discount__c, JObject.GetValue('Total_Trade_Discount__c').ToString());
+                      //Account_External_Key__c, Name,
+                      Json1  :=  JObject.GetValue('Account__r').ToString;
+                      JObject := JObject.Parse(Json1);
+                      salesOrderStagging.VALIDATE(Account_External_Key__c,JObject.GetValue('Account_External_Key__c').ToString);
+                      salesOrderStagging.VALIDATE(Name,JObject.GetValue('Name').ToString);
+                      salesOrderStagging.INSERT(TRUE);
+
+                      //getting Lines-----
+                      JObject1 := JsonValue;
+                      Json2  :=  JObject1.GetValue('Order_Line_Items__r').ToString;
+                      IF Json2<>'' THEN
+                        BEGIN
+                          JObject1:=JObject1.Parse(Json2);
+                          Json2:=JObject1.GetValue('records').ToString;
+                          JsonArray1 := JsonArray1.Parse(Json2);
+                          FOR J := 0 TO JsonArray1.Count() - 1 DO
+                            BEGIN
+                               JsonValue1 := JsonArray1.Item(J);
+                               JObject1 := JsonValue1;
+                               salesOrderStagging.INIT;
+                               salesOrderStagging.Type:= salesOrderStagging.Type::"Sales Line";
+                               salesOrderStagging.VALIDATE(salesOrderStagging.Line_Id, JObject1.GetValue('Id').ToString());
+                               salesOrderStagging.VALIDATE(salesOrderStagging."SalesForce ID-Header", salesForceID);
+                               IF JObject1.GetValue('Cash_Discount_CD__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Cash_Discount_CD__c, JObject1.GetValue('Cash_Discount_CD__c').ToString());
+                               IF JObject1.GetValue('CGST_Percentage__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_CGST_Percentage__c, JObject1.GetValue('CGST_Percentage__c').ToString());
+                               IF JObject1.GetValue('CGST__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_CGST__c, JObject1.GetValue('CGST__c').ToString());
+                               IF JObject1.GetValue('Final_Price__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Final_Price__c, JObject1.GetValue('Final_Price__c').ToString());
+                               IF JObject1.GetValue('IGST__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_IGST__c, JObject1.GetValue('IGST__c').ToString());
+                               IF JObject1.GetValue('OriPlast_Product_Unit_Price__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Product_Unit_Price__c, JObject1.GetValue('OriPlast_Product_Unit_Price__c').ToString());
+                               IF JObject1.GetValue('Price_After_Discount__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Price_After_Discount__c, JObject1.GetValue('Price_After_Discount__c').ToString());
+                               IF JObject1.GetValue('Quantity__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Quantity__c, JObject1.GetValue('Quantity__c').ToString());
+                               IF JObject1.GetValue('CGST_Percentage__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_SGST_Percentage__c, JObject1.GetValue('SGST_Percentage__c').ToString());
+                               IF JObject1.GetValue('SGST__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_SGST__c, JObject1.GetValue('SGST__c').ToString());
+                               IF JObject1.GetValue('Total_Discount__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Total_Discount__c, JObject1.GetValue('Total_Discount__c').ToString());
+                               IF JObject1.GetValue('Total_Price__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Total_Price__c, JObject1.GetValue('Total_Price__c').ToString());
+                               IF JObject1.GetValue('Trade_Discount_TD__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Trade_Discount_TD__c, JObject1.GetValue('Trade_Discount_TD__c').ToString());
+                               IF JObject1.GetValue('Trade_Discount__c').ToString()<>''THEN
+                               EVALUATE(salesOrderStagging.Line_Trade_Discount__c, JObject1.GetValue('Trade_Discount__c').ToString());
+                               Json2  :=  JObject1.GetValue('Ori_Plast_Product__r').ToString;
+                               JObject1 := JObject1.Parse(Json2);
+                               salesOrderStagging.VALIDATE(salesOrderStagging.Line_Product_Unique_Key__c, JObject1.GetValue('OriPlast_Product_Unique_Key__c').ToString());
+                               salesOrderStagging.VALIDATE(salesOrderStagging.Line_Description__c, JObject1.GetValue('Description__c').ToString());
+                               salesOrderStagging.VALIDATE(salesOrderStagging.Line_Name, JObject1.GetValue('Name').ToString());
+                               salesOrderStagging.INSERT(TRUE);
+                            END;
+                        END;
+                    END;
+                END;
+             END;
+           END;
+        END
+      ELSE
+        MESSAGE(GETLASTERRORTEXT);
+    END;
+
+    PROCEDURE CreateSalesOrder@1000000001();
+    BEGIN
+      CLEAR(salesOrderStagging);
+      salesOrderStagging.SETRANGE(Processed,FALSE);
+      salesOrderStagging.SETRANGE(Type,salesOrderStagging.Type::"Sales Header");
+      IF salesOrderStagging.FINDSET THEN
+        REPEAT
+          IF InsertHeader() THEN BEGIN
+              //Inserting Sales Header
+               MESSAGE('ok1 %1',salesHeader."No.");
+               salesOrderStagging.Processed := TRUE;
+               salesOrderStagging."Sales Order No.":=salesHeader."No.";
+               salesOrderStagging."Order Creation Error":='';
+               salesOrderStagging."Achnowledge Error":='';
+               salesOrderStagging.Acknowledged:=FALSE;
+               salesOrderStagging.MODIFY;
+               //Inserting Sales Line
+                  CLEAR(SalesLineNo);
+                  SalesOrderStagging2.SETRANGE(Type,salesOrderStagging.Type::"Sales Line");
+                  SalesOrderStagging2.SETRANGE("SalesForce ID-Header",salesOrderStagging."SalesForce ID-Header");
+                  IF SalesOrderStagging2.FINDSET THEN
+                    REPEAT
+                       SalesOrderStagging2."Order Creation Error":='';
+                        IF InsertLine THEN
+                            SalesOrderStagging2.Processed:=TRUE
+                           ELSE BEGIN
+                            SalesOrderStagging2."Order Creation Error":=COPYSTR(GETLASTERRORTEXT,1,250);
+                            SalesOrderStagging2.Processed:=FALSE;
+                            DeleteLines:=TRUE;
+                            END;
+                        SalesOrderStagging2.MODIFY();
+                    UNTIL SalesOrderStagging2.NEXT=0;
+                  IF DeleteLines THEN
+                      DeleteSalesLine(salesHeader."No.")
+                  ELSE BEGIN
+                      salesOrderStagging.MODIFY;
+                        // Acknowedging Orders to saleforce..
+                      ConfirmSalesOrder(GetAccessToken(''),salesOrderStagging,ErrorMessage2,Acknowledge2);
+                      salesOrderStagging."Achnowledge Error":=ErrorMessage2;
+                      salesOrderStagging.Acknowledged:=Acknowledge2;
+                    END;
+          END ELSE BEGIN
+            MESSAGE('Not Ok %1',salesHeader."No.");
+            salesOrderStagging."Order Creation Error":=COPYSTR(GETLASTERRORTEXT,1,250);
+          END;
+          salesOrderStagging.MODIFY();
+      UNTIL salesOrderStagging.NEXT=0;
+
+    END;
+
+    PROCEDURE ConfirmSalesOrder@1000000013(AccessToken@1000000000 : Text;SalesStaggingRec@1000000003 : Record 50101;VAR ErrorMessage@1000000001 : Text;VAR Acknowedge@1000000002 : Boolean);
+    BEGIN
+      CLEAR(SecurityProtocol);
+      CLEAR(HttpWebRequestMgt);
+      CLEAR(url);
+      CLEAR(ApiResult);
+      SecurityProtocol := SecurityProtocol.SecurityProtocol(SecurityProtocol.SecurityProtocol.Tls12);
+      url := 'https://oriplastltd--uat.sandbox.my.salesforce.com/services/data/v61.0/composite/sobjects/';
+      HttpWebRequestMgt.Initialize(url);
+      HttpWebRequestMgt.DisableUI;
+      HttpWebRequestMgt.SetMethod('PATCH');
+      HttpWebRequestMgt.AddHeader('Authorization','Bearer '+AccessToken);
+      HttpWebRequestMgt.AddHeader('Content-Type','application/json');
+      HttpWebRequestMgt.SetReturnType('application/json');
+      HttpWebRequestMgt.AddBodyAsText(GetBody);
+      TempBlob.INIT;
+      TempBlob.Blob.CREATEINSTREAM(Instr);
+      CLEAR(ResponseHeaders);
+      CLEAR(Json);
+      CLEAR(SalesOrderStagging7);
+      SalesOrderStagging7.SETRANGE("SalesForce ID-Header",SalesStaggingRec."SalesForce ID-Header");
+      SalesOrderStagging7.SETRANGE(Processed,FALSE);
+       IF NOT SalesOrderStagging7.FINDFIRST THEN BEGIN
+        MESSAGE(SalesStaggingRec."SalesForce ID-Header");
+        IF HttpWebRequestMgt.GetResponse(Instr,HttpStatusCode,ResponseHeaders) THEN BEGIN
+        MESSAGE('hi');
+          IF HttpStatusCode.ToString = HttpStatusCode.OK.ToString THEN BEGIN
+          ApiResult:=TempBlob.ReadAsText('',TEXTENCODING::UTF8);
+          JsonArray:=JsonArray.Parse(ApiResult);
+            FOR I := 0 TO JsonArray.Count() - 1 DO BEGIN
+                JsonValue:=JsonArray.Item(I);
+                JObject:=JsonValue;
+                IF 'False'=JObject.GetValue('success').ToString() THEN BEGIN
+                  ErrorMessage:=COPYSTR(JObject.GetValue('errors').ToString(),1,250);
+                  Acknowedge:=FALSE;
+                END ELSE BEGIN
+                  ErrorMessage:='';
+                  Acknowedge:=TRUE;
+              END;
+            END;
+          END;
+      END ELSE BEGIN
+             PatchAPILog.RESET;
+             PatchAPILog.INIT;
+             PatchAPILog."API TYPE":=PatchAPILog."API TYPE"::"Sales Header";
+             PatchAPILog."Error part2":=COPYSTR(GETLASTERRORTEXT,1,250);
+             PatchAPILog."Error part1":=COPYSTR(GETLASTERRORTEXT,250,499);
+             PatchAPILog.INSERT;
+        END;
+      END;
+
+
+
+
+      //
+      // salesOrderStagging.SETRANGE(Type,salesOrderStagging.Type::"Sales Header");
+      // salesOrderStagging.SETRANGE(Acknowledged,FALSE);
+      // salesOrderStagging.SETRANGE(Processed,TRUE);
+      // IF salesOrderStagging.FINDFIRST THEN BEGIN
+      //  MESSAGE(salesOrderStagging."SalesForce ID-Header");
+      //  IF HttpWebRequestMgt.GetResponse(Instr,HttpStatusCode,ResponseHeaders) THEN BEGIN
+      //    MESSAGE('hi');
+      //     IF HttpStatusCode.ToString = HttpStatusCode.OK.ToString THEN BEGIN
+      //      ApiResult:=TempBlob.ReadAsText('',TEXTENCODING::UTF8);
+      //      JsonArray:=JsonArray.Parse(ApiResult);
+      //       FOR I := 0 TO JsonArray.Count() - 1 DO BEGIN
+      //           CLEAR(salesOrderStagging);
+      //           JsonValue:=JsonArray.Item(I);
+      //           JObject:=JsonValue;
+      //           IF 'False'=JObject.GetValue('success').ToString() THEN BEGIN
+      //               Countacksalesheader:=-1;
+      //               salesOrderStagging.SETRANGE(Type,salesOrderStagging.Type::"Sales Header");
+      //               salesOrderStagging.SETRANGE(Acknowledged,FALSE);
+      //               salesOrderStagging.SETRANGE(Processed,TRUE);
+      //               IF salesOrderStagging.FINDFIRST THEN REPEAT
+      //                  Countacksalesheader+=1;
+      //                  SalesOrderStagging5.RESET;
+      //                  SalesOrderStagging5.SETRANGE("SalesForce ID-Header",salesOrderStagging."SalesForce ID-Header");
+      //                  SalesOrderStagging5.SETRANGE(Processed,FALSE);
+      //                  IF NOT SalesOrderStagging5.FINDFIRST THEN BEGIN
+      //                     IF Countacksalesheader=I THEN BEGIN
+      //                       salesOrderStagging."Achnowledge Error":=COPYSTR(JObject.GetValue('errors').ToString(),1,250);
+      //                       salesOrderStagging.MODIFY;
+      //                       END;
+      //                    END;
+      //                 UNTIL salesOrderStagging.NEXT=0;
+      //            END ELSE BEGIN
+      //              CLEAR(salesOrderStagging);
+      //              salesOrderStagging.SETRANGE(Type,salesOrderStagging.Type::"Sales Header");
+      //              salesOrderStagging.SETRANGE(Processed,TRUE);
+      //              salesOrderStagging.SETRANGE("SalesForce ID-Header",JObject.GetValue('id').ToString());
+      //              IF salesOrderStagging.FINDFIRST THEN BEGIN
+      //                  salesOrderStagging.Acknowledged:=TRUE;
+      //                  salesOrderStagging.MODIFY;
+      //                END;
+      //             END;
+      //         END;
+      //       END;
+      //     END
+      //     ELSE BEGIN
+      //       PatchAPILog.RESET;
+      //       PatchAPILog.INIT;
+      //       PatchAPILog."API TYPE":=PatchAPILog."API TYPE"::"Sales Header";
+      //       PatchAPILog."Error part2":=COPYSTR(GETLASTERRORTEXT,1,250);
+      //       PatchAPILog."Error part1":=COPYSTR(GETLASTERRORTEXT,250,499);
+      //       PatchAPILog.INSERT;
+      //       END;
+      // END;
+
+    END;
+
+    LOCAL PROCEDURE WriteToGlbTextVar@1000000000(Label@1000000000 : Text;Value@1000000001 : Text;ValFormat@1000000002 : 'Text,Number';InsertComma@1000000003 : Boolean;RecBoolean@1000000006 : Boolean);
+    VAR
+      DoubleQuotes@1000000004 : TextConst 'ENU=""""';
+      Comma@1000000005 : TextConst 'ENU=,';
+    BEGIN
+      IF Value <> '' THEN BEGIN
+         IF ValFormat = ValFormat::Text THEN BEGIN
+            IF InsertComma AND RecBoolean THEN
+                GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + Value + Comma
+            ELSE
+            IF InsertComma AND NOT RecBoolean THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + Value + DoubleQuotes + Comma;
+            IF NOT InsertComma AND RecBoolean THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + Value
+            ELSE IF NOT InsertComma THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + Value + DoubleQuotes;
+         END ELSE BEGIN
+            IF InsertComma THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + Value + Comma
+            ELSE
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + Value;
+         END;
+      END ELSE BEGIN
+         IF ValFormat = ValFormat::Text THEN BEGIN
+            IF InsertComma THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + DoubleQuotes + Comma
+            ELSE
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + DoubleQuotes;
+         END ELSE BEGIN
+            IF InsertComma THEN
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + '0' + DoubleQuotes + Comma
+            ELSE
+               GlbTextVar += DoubleQuotes + Label + DoubleQuotes + ': ' + DoubleQuotes + '0' + DoubleQuotes;
+
+         END;
+      END;
+    END;
+
+    LOCAL PROCEDURE GetBody@1000000010() BodyAsText : Text;
+    BEGIN
+      CountSalesHeader:=0;
+      GlbTextVar := '';
+      GlbTextVar += '{';
+      WriteToGlbTextVar('allOrNone','false',0,TRUE,TRUE);
+      GlbTextVar += '"records": [';
+      SalesOrderStagging3.SETRANGE(Type,SalesOrderStagging3.Type::"Sales Header");
+      SalesOrderStagging3.SETRANGE(Processed,TRUE);
+      SalesOrderStagging3.SETRANGE(Acknowledged,FALSE);
+      IF SalesOrderStagging3.FINDSET THEN
+        BEGIN
+          CountSalesHeader:=SalesOrderStagging3.COUNT;
+            REPEAT
+            SalesOrderStagging4.RESET;
+            SalesOrderStagging4.SETRANGE("SalesForce ID-Header",SalesOrderStagging3."SalesForce ID-Header");
+            SalesOrderStagging4.SETRANGE(Processed,FALSE);
+            IF NOT SalesOrderStagging4.FINDFIRST THEN BEGIN
+      //          FOR I := 1 TO 1 DO BEGIN
+                GlbTextVar += '{';
+                GlbTextVar += '"attributes": {';
+                WriteToGlbTextVar('type','Ori_Plast_Order__c',0,FALSE,FALSE);
+                GlbTextVar += '},';
+                WriteToGlbTextVar('id',SalesOrderStagging3."SalesForce ID-Header",0,TRUE,FALSE);
+                WriteToGlbTextVar('is_Sales_Order_Received__c','true',0,FALSE,TRUE);
+                GlbTextVar += '},';
+      //        END;
+            END;
+            UNTIL SalesOrderStagging3.NEXT=0;
+              GlbTextVar += ']';
+              GlbTextVar += '}';
+              GlbTextVar := DELSTR(GlbTextVar,(STRLEN(GlbTextVar)-2),1);
+      //        MESSAGE(GlbTextVar);
+          END;
+      EXIT(GlbTextVar);
+    END;
+
+    [TryFunction]
+    LOCAL PROCEDURE InsertHeader@1000000020();
+    BEGIN
+      CLEAR(salesHeader);
+      IF salesOrderStagging."Sales Order No."='' THEN BEGIN
+        salesHeader.INIT;
+        salesHeader."Document Type":=salesHeader."Document Type"::Order;
+        salesHeader.VALIDATE("Sell-to Customer No.",salesOrderStagging.Account_External_Key__c);
+        salesHeader.VALIDATE("SalesForce Header ID",salesOrderStagging."SalesForce ID-Header");
+        salesHeader.INSERT(TRUE);
+      END ELSE BEGIN
+        salesHeader.SETRANGE("Document Type",salesHeader."Document Type"::Order);
+        salesHeader.SETRANGE("SalesForce Header ID",salesOrderStagging."SalesForce ID-Header");
+        salesHeader.SETRANGE("No.",salesOrderStagging."Sales Order No.");
+        salesHeader.FINDFIRST;
+        salesHeader.VALIDATE("Sell-to Address",salesOrderStagging.Account_External_Key__c);
+        salesHeader.MODIFY;
+        END;
+    END;
+
+    [TryFunction]
+    LOCAL PROCEDURE InsertLine@1000000023();
+    BEGIN
+      SalesLines.INIT;
+      SalesLines."Document No.":=salesHeader."No.";
+      SalesLines."Document Type":=SalesLines."Document Type"::Order;
+      SalesLines.Type:=SalesLines.Type::Item;
+      SalesLineNo+=10000;
+      SalesLines."Line No.":=SalesLineNo;
+      SalesLines.VALIDATE("No.",SalesOrderStagging2.Line_Product_Unique_Key__c);
+      SalesLines.Description:=SalesOrderStagging2.Line_Name;
+      SalesLines."Description 2":=SalesOrderStagging2.Line_Description__c;
+      SalesLines."SalesForce Line ID":=SalesOrderStagging2.Line_Id;
+      SalesLines.INSERT(TRUE);
+    END;
+
+    LOCAL PROCEDURE DeleteSalesLine@1000000062(No@1000000000 : Code[20]);
+    BEGIN
+      IF No<>''THEN BEGIN
+        SalesLine1.SETRANGE("Document No.",No);
+        SalesLine1.SETRANGE("Document Type",SalesLine1."Document Type"::Order);
+        SalesLine1.SETRANGE(Type,SalesLine1.Type::Item);
+        IF SalesLine1.FINDSET THEN
+        REPEAT
+          SalesLine1.DELETE;
+          UNTIL SalesLine1.NEXT=0;
+      END;
+    END;
+
+    EVENT JObject@1000000004::PropertyChanged@105(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.PropertyChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject@1000000004::PropertyChanging@106(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.PropertyChangingEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject@1000000004::ListChanged@107(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.ListChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject@1000000004::AddingNew@108(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.AddingNewEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject@1000000004::CollectionChanged@109(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NotifyCollectionChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray@1000000052::ListChanged@105(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.ListChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray@1000000052::AddingNew@106(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.AddingNewEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray@1000000052::CollectionChanged@107(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NotifyCollectionChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray1@1000000056::ListChanged@105(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.ListChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray1@1000000056::AddingNew@106(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.AddingNewEventArgs");
+    BEGIN
+    END;
+
+    EVENT JsonArray1@1000000056::CollectionChanged@107(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NotifyCollectionChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject1@1000000059::PropertyChanged@105(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.PropertyChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject1@1000000059::PropertyChanging@106(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.PropertyChangingEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject1@1000000059::ListChanged@107(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.ListChangedEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject1@1000000059::AddingNew@108(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.ComponentModel.AddingNewEventArgs");
+    BEGIN
+    END;
+
+    EVENT JObject1@1000000059::CollectionChanged@109(sender@1000000001 : Variant;e@1000000000 : DotNet "'System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089'.System.Collections.Specialized.NotifyCollectionChangedEventArgs");
+    BEGIN
+    END;
+
+    BEGIN
+    END.
+  }
+}
+
